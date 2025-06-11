@@ -1,0 +1,4 @@
+DataSet/
+.venv/
+01_trained_resnet.pth
+best_hand_gesture.pth
