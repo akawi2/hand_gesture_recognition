@@ -2,9 +2,12 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.onnx import export
 from torchvision import transforms, models
 from PIL import Image
 import pyautogui
+
+from gesture_control import handle_ppt
 
 # Load the PyTorch model
 model = models.resnet18(pretrained=False)  # Same architecture as during training
@@ -114,22 +117,10 @@ while True:
 
 
 
-    # Mapping classe → action PowerPoint
-    if confidence > 0.8:  # pour éviter les fausses détections
-        gesture = class_names[predicted_class]
 
-        if gesture == "Defiler a droite":
-            pyautogui.press("right")  # Slide suivante
-        elif gesture == "Defiler a gauche":
-            pyautogui.press("left")  # Slide précédente
-        elif gesture == "Zoomer":
-            pyautogui.hotkey("ctrl", "+")  # Zoomer
-        elif gesture == "Dezoomer":
-            pyautogui.hotkey("ctrl", "-")  # Dézoomer
-        elif gesture == "Augmenter":
-            pyautogui.press("volumeup")
-        elif gesture == "Diminuer":
-            pyautogui.press("volumedown")
+
+    # Mapping class → action PowerPoint
+    handle_ppt(confidence, class_names, predicted_class)
 
     # Draw prediction information
     display_frame = draw_prediction(display_frame, 

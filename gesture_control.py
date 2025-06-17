@@ -1,41 +1,21 @@
-# gesture_control.py
-import cv2
-import mediapipe as mp
 import pyautogui
-import joblib
 
-# Charger ton modèle entraîné (SVM ou CNN)
-model = joblib.load("mon_modele.pkl")
 
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.7)
-cap = cv2.VideoCapture(0)
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+def handle_ppt(confidence, class_names, predicted_class):
+    if confidence > 0.8:  # pour éviter les fausses détections
+        gesture = class_names[predicted_class]
 
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    result = hands.process(rgb)
+        if gesture == "Defiler a droite":
+            pyautogui.press("right")  # Slide suivante
+        elif gesture == "Defiler a gauche":
+            pyautogui.press("left")  # Slide précédente
+        elif gesture == "Zoomer":
+            pyautogui.hotkey("ctrl", "+")  # Zoomer
+        elif gesture == "Dezoomer":
+            pyautogui.hotkey("ctrl", "-")  # Dézoomer
+        elif gesture == "Augmenter":
+            pyautogui.press("volumeup")
+        elif gesture == "Diminuer":
+            pyautogui.press("volumedown")
 
-    if result.multi_hand_landmarks:
-        for hand in result.multi_hand_landmarks:
-            landmarks = []
-            for lm in hand.landmark:
-                landmarks.extend([lm.x, lm.y])
-
-            # Prédiction
-            gesture = model.predict([landmarks])[0]
-
-            if gesture == "swipe_right":
-                pyautogui.press("right")
-            elif gesture == "swipe_left":
-                pyautogui.press("left")
-
-    cv2.imshow("Camera", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
