@@ -8,13 +8,14 @@ import os
 from PIL import Image
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # --- Step 1: Define Dataset Class ---
 class HandGestureDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
         self.transform = transform
-        self.classes = ['Augmenter', 'Defiler_a_droite', 'Defiler_a_gauche', 'Dezoomer', 'Diminuer', 'Zoomer']  # 3 classes
+        self.classes = ['Augmenter', 'Defiler_a_droite', 'Defiler_a_gauche', 'Dezoomer', 'Diminuer', 'Zoomer']  # 6 classes
         self.images = []
         
         for label, class_name in enumerate(self.classes):
@@ -127,7 +128,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), 'best_hand_gesture.pth')
+            torch.save(model.state_dict(), 'analysis_best_2.pth')
     
     print(f'Training complete. Best Val Accuracy: {best_acc:.4f}')
     plot_training_results(train_losses, val_losses, train_accuracies, val_accuracies)
@@ -158,7 +159,7 @@ def plot_training_results(train_losses, val_losses, train_accuracies, val_accura
     plt.show()
 # --- Run Training ---
 
-train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=20)
+train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=30)
 
 def evaluate_model(model, test_loader):
     model.eval()
@@ -168,6 +169,8 @@ def evaluate_model(model, test_loader):
     with torch.no_grad():
         for inputs, labels in test_loader:
             inputs, labels = inputs.to(device), labels.to(device)
+            print(f"inputs : {inputs}")
+            print(f"labels : {inputs}")
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             
@@ -177,7 +180,7 @@ def evaluate_model(model, test_loader):
     # Calculate metrics
     accuracy = accuracy_score(y_true, y_pred)
     cm = confusion_matrix(y_true, y_pred)
-    report = classification_report(y_true, y_pred, target_names=['normal', 'benign', 'malignant'])
+    report = classification_report(y_true, y_pred, target_names=['Augmenter', 'Defiler_a_droite', 'Defiler_a_gauche', 'Dezoomer', 'Diminuer', 'Zoomer'])
     
     print(f"Accuracy: {accuracy:.4f}")
     print("Classification Report:\n", report)
@@ -185,8 +188,8 @@ def evaluate_model(model, test_loader):
     # Plot confusion matrix
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=['normal', 'benign', 'malignant'], 
-                yticklabels=['normal', 'benign', 'malignant'])
+                xticklabels=['Augmenter', 'Defiler_a_droite', 'Defiler_a_gauche', 'Dezoomer', 'Diminuer', 'Zoomer'], 
+                yticklabels=['Augmenter', 'Defiler_a_droite', 'Defiler_a_gauche', 'Dezoomer', 'Diminuer', 'Zoomer'])
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.title('Confusion Matrix')
