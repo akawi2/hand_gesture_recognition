@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torchvision import transforms, models
 from PIL import Image
+import pyautogui
 
 # Load the PyTorch model
 model = models.resnet18(pretrained=False)  # Same architecture as during training
@@ -110,7 +111,26 @@ while True:
         confidence, predicted_class = torch.max(probabilities, 0)
         confidence = confidence.item()
         predicted_class = predicted_class.item()
-    
+
+
+
+    # Mapping classe → action PowerPoint
+    if confidence > 0.8:  # pour éviter les fausses détections
+        gesture = class_names[predicted_class]
+
+        if gesture == "Defiler a droite":
+            pyautogui.press("right")  # Slide suivante
+        elif gesture == "Defiler a gauche":
+            pyautogui.press("left")  # Slide précédente
+        elif gesture == "Zoomer":
+            pyautogui.hotkey("ctrl", "+")  # Zoomer
+        elif gesture == "Dezoomer":
+            pyautogui.hotkey("ctrl", "-")  # Dézoomer
+        elif gesture == "Augmenter":
+            pyautogui.press("volumeup")
+        elif gesture == "Diminuer":
+            pyautogui.press("volumedown")
+
     # Draw prediction information
     display_frame = draw_prediction(display_frame, 
                                   class_names[predicted_class], 
