@@ -19,17 +19,17 @@ def handle_ppt(confidence, class_names, predicted_class):
             pyautogui.press("volumedown")
 
 def handle_ppt_svm(gesture, hand_landmarks=None):
-    if gesture == 4:
+    if gesture == "Gauche":
         pyautogui.press("right")  # Slide suivante
-    elif gesture == 3:
+    elif gesture == "Droite":
         pyautogui.press("left")   # Slide précédente
-    elif gesture == 5:
+    elif gesture == "Zoomer":
         pyautogui.hotkey("ctrl", "+")
-    elif gesture == 1:
+    elif gesture == "Dezoomer":
         pyautogui.hotkey("ctrl", "-")
-    elif gesture == 0:
+    elif gesture == "Augmenter":
         pyautogui.click(button='left')
-    elif gesture == 2 and hand_landmarks is not None:
+    elif gesture == "Diminuer" and hand_landmarks is not None:
         index_finger = hand_landmarks.landmark[8]  # Index tip
         screen_w, screen_h = pyautogui.size()
         x = int(index_finger.x * screen_w)

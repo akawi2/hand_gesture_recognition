@@ -24,7 +24,7 @@ def extract_landmarks(hand_landmarks):
 
 # le = LabelEncoder()
 
-model_file = 'mediapipe/gesture_recognition_model.pkl'
+model_file = 'mediapipe/gesture_recognition_model_2.pkl'
 if os.path.exists(model_file):
     # Charger le modèle si le fichier existe
     model = joblib.load(model_file)
@@ -58,7 +58,7 @@ if os.path.exists(model_file):
                 # Mapping class → action PowerPoint
                 current_time = time.time()
 
-                if gesture == 2:
+                if gesture == "Diminuer":
                     handle_ppt_svm(gesture, hand_landmarks)
                 else:
                     if gesture == previous_gesture:
