@@ -2,6 +2,5 @@ DataSet/
 .venv/
 01_trained_resnet.pth
 best_hand_gesture.pth
-analysis_best_1.pth
 analysis_best_2.pth
 best _1_save.pth

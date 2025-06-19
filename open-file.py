@@ -1,40 +1,73 @@
-from tkinter import Canvas, Frame, Label, Button, filedialog, messagebox
 import tkinter as tk
+from tkinter import Canvas, Frame, Label, Button, filedialog, messagebox
 import subprocess
 import threading
 import os
 
 
-#Color configuration
-def draw_linear_gradient(canvas, width, height, colors):
-    # Divise la hauteur en autant de bandes que de couleurs
-    steps = len(colors) - 1
-    band_height = height // steps
+# Gradient function
+def draw_linear_gradient(canvas, width, height, colors, angle=135):
+    steps = height  # Nombre de bandes verticales pour un dégradé fluide
+    rgb_colors = [tuple(int(c.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) for c in colors]
+    gradient_colors = []
 
+    # Interpolate colors vertically
     for i in range(steps):
-        r1, g1, b1 = canvas.winfo_rgb(colors[i])
-        r2, g2, b2 = canvas.winfo_rgb(colors[i + 1])
+        fraction = i / (steps - 1) if steps > 1 else 0
+        r = int(rgb_colors[0][0] + sum(
+            (rgb_colors[j + 1][0] - rgb_colors[j][0]) * (fraction ** (len(colors) - 1 - j)) for j in
+            range(len(colors) - 1)))
+        g = int(rgb_colors[0][1] + sum(
+            (rgb_colors[j + 1][1] - rgb_colors[j][1]) * (fraction ** (len(colors) - 1 - j)) for j in
+            range(len(colors) - 1)))
+        b = int(rgb_colors[0][2] + sum(
+            (rgb_colors[j + 1][2] - rgb_colors[j][2]) * (fraction ** (len(colors) - 1 - j)) for j in
+            range(len(colors) - 1)))
+        gradient_colors.append(f"#{r:02x}{g:02x}{b:02x}")
 
-        r_ratio = (r2 - r1) / band_height
-        g_ratio = (g2 - g1) / band_height
-        b_ratio = (b2 - b1) / band_height
+    # Fill the canvas with gradient rectangles
+    for i in range(steps):
+        canvas.create_rectangle(0, i * height // steps, width, (i + 1) * height // steps,
+                                fill=gradient_colors[i], outline=gradient_colors[i])
 
-        for j in range(band_height):
-            nr = int(r1 + (r_ratio * j)) // 256
-            ng = int(g1 + (g_ratio * j)) // 256
-            nb = int(b1 + (b_ratio * j)) // 256
-            color = f"#{nr:02x}{ng:02x}{nb:02x}"
-            canvas.create_rectangle(0, i * band_height + j, width, i * band_height + j + 1, outline=color, fill=color)
+
+# Modern Button class
+class ModernButton(Button):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.default_bg = kwargs.get('bg', '#FF4081')
+        self.hover_bg = '#E91E63'
+        self.config(
+            relief='flat',
+            borderwidth=0,
+            font=("Montserrat", 14, "bold"),
+            fg='white',
+            activebackground=self.hover_bg,
+            activeforeground='white',
+            padx=20,
+            pady=10,
+            cursor='hand2'
+        )
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_leave)
+
+    def on_enter(self, e):
+        self.config(bg=self.hover_bg)
+
+    def on_leave(self, e):
+        self.config(bg=self.default_bg)
 
 
 # Main Application
 class GestureApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Gesture-Controlled Presentation")
-        self.geometry("700x400")
+        self.title("GestureSync")
+        self.geometry("800x500")
         self.resizable(False, False)
-        self.configure(bg="#f0f0f0")
+
+        self.gradient_colors = ["#6B48FF", "#FF69B4", "#FF8E53", "#40C4FF", "#D81B60"]
+
         self.frames = {}
         for F in (WelcomePage, ModelSelectionPage, NotAvailablePage):
             page = F(parent=self, controller=self)
@@ -46,50 +79,56 @@ class GestureApp(tk.Tk):
         frame = self.frames[page]
         frame.tkraise()
 
+
 # Page 1: Welcome Page
 class WelcomePage(Frame):
-
     def __init__(self, parent, controller):
-        Frame.__init__(self, parent, bg="#003366")
+        super().__init__(parent)
         self.controller = controller
 
+        canvas = Canvas(self, width=800, height=500, highlightthickness=0)  # Removed bg='transparent'
+        canvas.place(relwidth=1, relheight=1)
+        draw_linear_gradient(canvas, 800, 500, controller.gradient_colors)
+        Label(self, text="Welcome to Hand Gesture Application✨",
+              font=("Raleway", 28, "bold"), bg="#6B48FF", fg="#F5F5F5").pack(pady=50)
+        Label(self, text="Control your presentations with intuitive hand gestures.😄",
+              font=("Roboto", 18), bg="#6B48FF",fg="#F5F5F5").pack(pady=5)
+        ModernButton(self, text="Get Started", bg="#FF4081",
+                     command=lambda: controller.show_frame(ModelSelectionPage)).pack(pady=120)
 
-
-        Label(self, text="Welcome to the Gesture-Controlled Presentation System",
-              font=("Helvetica", 18, "bold"), bg="#003366", fg="white").pack(pady=80)
-        Label(self, text="Use hand gestures to control your PowerPoint slides.",
-              font=("Helvetica", 14), bg="#003366", fg="white").pack(pady=10)
-        Button(self, text="Start", font=("Helvetica", 14), bg="#00aaff", fg="white",
-               command=lambda: controller.show_frame(ModelSelectionPage)).pack(pady=40)
 
 # Page 2: Model Selection
 class ModelSelectionPage(Frame):
     def __init__(self, parent, controller):
-        Frame.__init__(self, parent, bg="#ffffff")
+        super().__init__(parent)
+
         self.controller = controller
-        Label(self, text="Choose a Gesture Recognition Model",
-              font=("Helvetica", 16, "bold"), bg="#ffffff", fg="#003366").pack(pady=40)
 
-        Button(self, text="CNN-Based Model", font=("Helvetica", 12), width=30,
-               bg="#007ACC", fg="white", command=self.launch_cnn_model).pack(pady=10)
+        canvas = Canvas(self, width=800, height=500, highlightthickness=0)  # Removed bg='transparent'
+        canvas.place(relwidth=1, relheight=1)
+        draw_linear_gradient(canvas, 800, 500, controller.gradient_colors)
 
-        Button(self, text="MediaPipe-Based Model", font=("Helvetica", 12), width=30,
-               bg="#CCCCCC", fg="#666666", command=lambda: controller.show_frame(NotAvailablePage)).pack(pady=10)
-
-        Button(self, text="Back to Welcome Page", font=("Helvetica", 10),
-               command=lambda: controller.show_frame(WelcomePage)).pack(pady=30)
+        Label(self, text="Select Your Gesture Model🪼",
+              font=("Montserrat", 24, "bold"), bg="#6B48FF", fg="#F5F5F5").pack(pady=80)
+        ModernButton(self, text="CNN-Based Model", width=25, bg="#3F51B5",
+                     command=self.launch_cnn_model).pack(pady=20)
+        ModernButton(self, text="MediaPipe-Based Model", width=25, bg="#FF69B4",
+                     command=self.launch_mediapipe_model).pack(pady=20)
+        ModernButton(self, text="Back to Home", bg="#FF5722", width=25,
+                     command=lambda: controller.show_frame(WelcomePage)).pack(pady=30)
 
     def launch_cnn_model(self):
         filepath = filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.ppsx")])
         if not filepath:
-            messagebox.showwarning("Warning", "No PowerPoint file selected.")
+            messagebox.showwarning("No File Selected", "Please choose a PowerPoint file to continue.")
             return
 
         try:
             subprocess.Popen(['start', '', filepath], shell=True)
-            messagebox.showinfo("Info", "Presentation started. Please switch to slideshow mode.")
+            messagebox.showinfo("Presentation Launched",
+                                "Your presentation is open. Switch to slideshow mode to start gesturing!")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open PowerPoint file: {e}")
+            messagebox.showerror("Launch Error", f"Could not open the file: {e}")
             return
 
         def run_gesture_detection():
@@ -99,31 +138,51 @@ class ModelSelectionPage(Frame):
         detection_thread.daemon = True
         detection_thread.start()
 
+    def launch_mediapipe_model(self):
+        filepath = filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.ppsx")])
+        if not filepath:
+            messagebox.showwarning("No File Selected", "Please choose a PowerPoint file to continue.")
+            return
+
+        try:
+            subprocess.Popen(['start', '', filepath], shell=True)
+            messagebox.showinfo("Presentation Launched",
+                                "Your presentation is open. Switch to slideshow mode to start gesturing!")
+        except Exception as e:
+            messagebox.showerror("Launch Error", f"Could not open the file: {e}")
+            return
+
+        def run_gesture_detection():
+            os.system("python realtime.py")
+
+
+        detection_thread = threading.Thread(target=run_gesture_detection)
+        detection_thread.daemon = True
+        detection_thread.start()
+
+
 # Page 3: Not Available Info
 class NotAvailablePage(Frame):
     def __init__(self, parent, controller):
-        Frame.__init__(self, parent, bg="#FFDDDD")
+        super().__init__(parent)
         self.controller = controller
-        Label(self, text="MediaPipe Model Not Yet Available",
-              font=("Helvetica", 16, "bold"), bg="#FFDDDD", fg="#660000").pack(pady=80)
-        Label(self, text="This feature is under development.",
-              font=("Helvetica", 14), bg="#FFDDDD", fg="#660000").pack(pady=10)
-        Button(self, text="Back to Model Selection", font=("Helvetica", 12),
-               command=lambda: controller.show_frame(ModelSelectionPage)).pack(pady=40)
+
+        canvas = Canvas(self, width=800, height=500, highlightthickness=0)  # Removed bg='transparent'
+        canvas.place(relwidth=1, relheight=1)
+        draw_linear_gradient(canvas, 800, 500, controller.gradient_colors)
+
+        Label(self, text="MediaPipe Model Coming Soon",
+              font=("Montserrat", 24, "bold"), fg="#FFFFFF").pack(pady=120)
+        Label(self, text="This feature is in development. Stay tuned!",
+              font=("Roboto", 18), fg="#F5F5F5").pack(pady=10)
+        ModernButton(self, text="Back to Selection", bg="#FF5722", width=20,
+                     command=lambda: controller.show_frame(ModelSelectionPage)).pack(pady=60)
+
 
 # Launch the app
-app = GestureApp()
-app.mainloop()
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    app = GestureApp()
+    app.mainloop()
 
 
 

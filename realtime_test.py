@@ -5,14 +5,14 @@ import torch.nn as nn
 from torch.onnx import export
 from torchvision import transforms, models
 from PIL import Image
-import pyautogui
+
 
 from gesture_control import handle_ppt
 
 # Load the PyTorch model
 model = models.resnet18(pretrained=False)  # Same architecture as during training
 model.fc = nn.Linear(model.fc.in_features, 6)  # Important: Match the final layer
-model.load_state_dict(torch.load('analysis_best_1.pth', map_location=torch.device('cpu')))
+model.load_state_dict(torch.load('best_hand_gesture.pth', map_location=torch.device('cpu')))
 model.eval()  # Set to evaluation mode
 
 class_names = ['Augmenter', 'Defiler a droite', 'Defiler a gauche', 'Dezoomer', 'Diminuer', 'Zommer']
